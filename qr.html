@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Ticket Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    #reader { width: 320px; margin: auto; }
+    #result { font-size: 18px; margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Scan Ticket QR</h2>
+  <div id="reader"></div>
+  <div id="result">Waiting for scan...</div>
+
+  <script>
+    const validSerials = ["15111", "15112", "15113", "15114", "15115"];
+
+    function onScanSuccess(decodedText, decodedResult) {
+      const result = document.getElementById('result');
+      if (validSerials.includes(decodedText)) {
+        result.innerHTML = `✅ Valid Ticket: ${decodedText}`;
+        result.style.color = 'green';
+      } else {
+        result.innerHTML = `❌ Invalid Ticket: ${decodedText}`;
+        result.style.color = 'red';
+      }
+
+      html5QrCode.stop().catch(err => console.error("Stop error:", err));
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          let backCam = devices.find(d => d.label.toLowerCase().includes("back") || d.label.toLowerCase().includes("rear"));
+          let camId = backCam ? backCam.id : devices[0].id;
+
+          html5QrCode.start(
+            camId,
+            { fps: 10, qrbox: 250 },
+            onScanSuccess
+          ).catch(err => {
+            document.getElementById("result").innerText = `Camera Start Error: ${err}`;
+          });
+        } else {
+          document.getElementById("result").innerText = "No camera found.";
+        }
+      }).catch(err => {
+        document.getElementById("result").innerText = `Camera List Error: ${err}`;
+      });
+    }).catch(err => {
+      document.getElementById("result").innerText = `Camera Access Denied: ${err}`;
+    });
+  </script>
+</body>
+</html>
